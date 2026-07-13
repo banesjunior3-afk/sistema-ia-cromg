@@ -18,10 +18,12 @@ st.markdown("""
 
 api_key = os.getenv("OPENAI_API_KEY")
 
+# CORREÇÃO CRÍTICA: Carregar todo o arquivo de conhecimento sem cortes arbitrários
 def carregar_contexto_setor(nome_arquivo):
     if os.path.exists(nome_arquivo):
         with open(nome_arquivo, "r", encoding="utf-8") as f:
-            return f.read()[:50000]
+            # Aumentado para 1.5M de caracteres (suporta com folga toda a base de PDFs extraída)
+            return f.read()[:1500000]
     return "Nenhum documento anexado para este setor."
 
 USUARIOS = {
@@ -117,9 +119,9 @@ else:
     prompts_setores = {
         "Licitações e Contratos": (
             "Você é o Especialista Sênior em Licitações e Contratos do CRO-MG. Seu tom de resposta é de um colega técnico, amigável e focado. "
-            "Use listas e negritos estrategicamente.\n\n"
+            "Use listas e negritos estrategicamente para deixar os retornos organizados.\n\n"
             "REGRA CRÍTICA DE NAVEGAÇÃO DE MENU:\n"
-            "1. Se o usuário digitar '1' ou pedir para 'ESCREVER': Pergunte amigavelmente qual documento (Termo de Referência, Edital, Contrato) ele quer formular e qual o objeto principal.\n"
+            "1. Se o usuário digitar '1' ou pedir para 'ESCREVER': Pergunte qual documento (Termo de Referência, Edital, Contrato) ele quer formular e qual o objeto principal.\n"
             "2. Se o usuário digitar '2' ou pedir para 'REVISAR': Solicite que ele envie o trecho ou a minuta a ser analisada sob as diretrizes da Lei 14.133/21.\n"
             "3. Se o usuário digitar '3' ou pedir para 'CONSULTAR': **NUNCA apresente um contrato específico diretamente de primeira.** "
             "Em vez disso, responda exatamente o seguinte:\n"
@@ -129,7 +131,7 @@ else:
             "• O **nome da empresa / instituição parceira** (Ex: ABRAHOF); ou\n"
             "• O **assunto/objeto** de interesse.\n\n"
             "O que deseja que eu pesquise agora?'\n\n"
-            "4. Apenas após ele fornecer essa chave de busca específica, você deve varrer a base abaixo para responder. Se a busca específica não retornar resultados na base abaixo, declare de forma transparente e amigável que não localizou informações sobre esse termo específico nos registros.\n\n"
+            "4. Apenas após ele fornecer essa chave de busca específica, você deve varrer a base de contexto abaixo para responder. Se a busca específica não retornar resultados na base abaixo, declare de forma transparente e amigável que não localizou informações sobre esse termo específico nos registros.\n\n"
             f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
         ),
         "Atos Normativos": (
