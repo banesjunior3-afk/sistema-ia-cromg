@@ -4,6 +4,7 @@ from openai import OpenAI
 
 st.set_page_config(page_title="Sistema IA - CRO MG", page_icon="🏛️", layout="centered")
 
+# Estilização da interface para leitura limpa
 st.markdown("""
     <style>
         .stApp { background-color: #F4F6F8; }
@@ -12,6 +13,9 @@ st.markdown("""
         .system-badge { text-align: center; color: #6C757D; font-size: 14px; margin-bottom: 30px; }
         div.stButton > button:first-child { background-color: #8B2635 !important; color: white !important; border-radius: 6px !important; font-weight: bold !important; width: 100% !important; height: 48px !important; margin-top: 15px; }
         div.stButton > button:first-child:hover { background-color: #6B1D29 !important; }
+        
+        /* Melhorias na legibilidade das mensagens de chat */
+        .stChatMessage { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.6; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -86,28 +90,62 @@ else:
 
     contexto_real = carregar_contexto_setor(arquivos_conhecimento[setor])
 
-    # Inicializa a mensagem de apresentação automática baseada no setor se o histórico estiver vazio
     if len(st.session_state.historico[setor]) == 0:
         if setor == "Licitações e Contratos":
-            msg_inicial = f"Olá, {st.session_state.perfil_nome}! Sou o Assistente Especialista em Licitações e Contratos do CRO MG (2026). O que gostaria de fazer hoje?\n\n**[1] ESCREVER** -> Redigir minutas ou novos termos de referência.\n**[2] REVISAR** -> Auditar minutas ou editais sob a Lei 14.133/21.\n**[3] CONSULTAR** -> Realizar levantamentos nos contratos ativos."
+            msg_inicial = (
+                f"Olá, {st.session_state.perfil_nome}! Sou o especialista técnico do setor de Licitações e Contratos do CRO-MG.\n\n"
+                "Como posso colaborar com suas demandas hoje? Escolha uma das frentes:\n\n"
+                "🔹 **[1] ESCREVER** → Redigir termos de referência, editais ou minutas contratuais.\n"
+                "🔹 **[2] REVISAR** → Auditar minutas, pareceres e conformidade com a Lei 14.133/21.\n"
+                "🔹 **[3] CONSULTAR** → Cruzar dados e verificar valores em contratos ativos de 2026."
+            )
         elif setor == "Atos Normativos":
-            msg_inicial = f"Olá, {st.session_state.perfil_nome}! Sou o Consultor Legislativo em Atos Normativos do CRO MG (2026). O que gostaria de fazer hoje?\n\n**[1] ESCREVER** -> Redigir minutas de novas portarias ou resoluções.\n**[2] REVISAR** -> Auditar termos técnicos e redação oficial.\n**[3] CONSULTAR** -> Buscar precedentes e vigências de decisões."
+            msg_inicial = (
+                f"Olá, {st.session_state.perfil_nome}! Sou o consultor técnico de Atos Normativos do conselho.\n\n"
+                "Qual deliberação vamos estruturar hoje?\n\n"
+                "🔹 **[1] ESCREVER** → Redigir minutas de resoluções, portarias e decisões formais.\n"
+                "🔹 **[2] REVISAR** → Analisar termos legislativos e padronização oficial.\n"
+                "🔹 **[3] CONSULTAR** → Verificar precedentes, vigências e bases históricas de 2026."
+            )
         else:
-            msg_inicial = f"Olá, {st.session_state.perfil_nome}! Sou o Diretor de Comunicação do CRO MG (2026). O que gostaria de fazer hoje?\n\n**[1] CALENDÁRIO DE PUBLICAÇÃO** -> Planejar posts e cronogramas.\n**[2] CRIAR CAMPANHA** -> Estruturar conceitos institucionais.\n**[3] DESENVOLVER COPY** -> Redigir textos no tom do conselho."
-        
+            msg_inicial = (
+                f"Olá, {st.session_state.perfil_nome}! Sou o estrategista de Comunicação Institucional do CRO-MG.\n\n"
+                "Qual conteúdo vamos planejar ou produzir?\n\n"
+                "🔹 **[1] CALENDÁRIO DE PUBLICAÇÃO** → Desenvolver cronogramas e linhas editoriais.\n"
+                "🔹 **[2] CRIAR CAMPANHA** → Modelar conceitos e estratégias de conscientização.\n"
+                "🔹 **[3] DESENVOLVER COPY** → Escrever textos finais focados no público de odontologia."
+            )
         st.session_state.historico[setor].append({"role": "assistant", "content": msg_inicial})
 
-    # PROMPT DE DIRETRIZ REFINADA COM PERMISSÃO DE SAUDAÇÕES
+    # PROMPT AVANÇADO: TONALIDADE AMIGÁVEL, CORREÇÃO TÉCNICA ATIVA E TEXTO ESCANEÁVEL
     prompts_setores = {
-        "Licitações e Contratos": f"Você é o Assistente Jurídico do CRO MG em 2026. Responda saudações cordiais de forma educada e pergunte como pode ajudar nas opções de Escrever, Revisar ou Consultar. Para perguntas de conteúdo técnico sobre o conselho, responda APENAS com base no contexto fornecido abaixo. Se a informação específica não estiver lá, diga firmemente: 'Não localizei essa informação nos arquivos oficiais indexados do conselho para 2026'. CONTEXTO:\n{contexto_real}",
-        "Atos Normativos": f"Você é o Consultor Legislativo do CRO MG para 2026. Responda a cumprimentos normalmente e oriente o fluxo. Para requisições sobre portarias e resoluções, use unicamente o contexto abaixo. Se não souber por falta de dados na base, diga que não localizou nos arquivos indexados. CONTEXTO:\n{contexto_real}",
-        "Comunicação Institucional": f"Você é o Diretor de Comunicação do CRO MG (2026). Responda a saudações de forma cordial. Utilize os dados e o tom institucional fornecidos na base abaixo para executar as tarefas de calendário, campanha ou cópia. Não invente fatos que não constem no texto fornecido. CONTEXTO:\n{contexto_real}"
+        "Licitações e Contratos": (
+            "Você é o Especialista Sênior em Licitações e Contratos do CRO-MG. Seu tom é de um colega de equipe amigável, "
+            "proativo e tecnicamente rigoroso. Você deve prezar por uma formatação altamente limpa, espaçada e de fácil leitura em tela (use listas e negritos estrategicamente).\n\n"
+            "REGRA DE OURO DA LICITAÇÃO: Se o usuário misturar conceitos jurídicos contraditórios (por exemplo, pedir um 'pregão eletrônico por inexibilidade'), "
+            "você deve corrigi-lo imediatamente no início da resposta com elegância e clareza (ex: explicar amigavelmente que ou é Pregão por competição ou Inexigibilidade por inviabilidade de competição). "
+            "Baseie-se exclusivamente nos dados reais do conselho fornecidos abaixo. Se não souber por falta de dados contextuais, diga que não localizou a informação nas bases oficiais de 2026.\n\n"
+            f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
+        ),
+        "Atos Normativos": (
+            "Você é o Consultor Legislativo de Atos Normativos do CRO-MG. Seu tom é solícito, inteligente e focado em excelência documental. "
+            "Apresente suas respostas estruturadas de forma muito escaneável, quebrando textos longos e usando espaçamento adequado.\n\n"
+            "Se o usuário pedir uma estrutura que fira a técnica legislativa padrão do conselho, oriente-o amigavelmente sobre o formato correto antes de continuar. "
+            "Baseie-se unicamente nas portarias e dados abaixo. Se faltarem dados, informe de forma direta.\n\n"
+            f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
+        ),
+        "Comunicação Institucional": (
+            "Você é o Redator e Estrategista de Comunicação Sênior do CRO-MG. Seu tom é dinâmico, criativo, engajador e alinhado aos preceitos da autarquia. "
+            "Apresente propostas de posts, campanhas e copys de forma totalmente visual e escaneável (com emoticons sutis, tópicos claros e divisão por canais).\n\n"
+            "Nunca misture abordagens comerciais inadequadas para conselhos de classe. Baseie-se apenas na realidade fornecida abaixo.\n\n"
+            f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
+        )
     }
 
     for msg in st.session_state.historico[setor]:
         with st.chat_message(msg["role"]): st.write(msg["content"])
 
-    if prompt := st.chat_input("Digite sua instrução ou escolha o número da atividade..."):
+    if prompt := st.chat_input("Digite sua mensagem para o especialista..."):
         st.session_state.historico[setor].append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.write(prompt)
             
