@@ -1,0 +1,1 @@
+TEXTO_BASE_COMUNICACAO_EXEMPLO: Insira aqui a variável correspondente se houver.

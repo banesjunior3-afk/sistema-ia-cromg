@@ -1,0 +1,1 @@
+TEXTO_BASE_LICITACOES_EXEMPLO: Insira aqui a variável correspondente se houver.
