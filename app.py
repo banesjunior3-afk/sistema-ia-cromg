@@ -4,7 +4,6 @@ from openai import OpenAI
 
 st.set_page_config(page_title="Sistema IA - CRO MG", page_icon="🏛️", layout="centered")
 
-# CSS de Interface
 st.markdown("""
     <style>
         .stApp { background-color: #F4F6F8; }
@@ -18,11 +17,10 @@ st.markdown("""
 
 api_key = os.getenv("OPENAI_API_KEY")
 
-# Função auxiliar para carregar a base de dados em produção
 def carregar_contexto_setor(nome_arquivo):
     if os.path.exists(nome_arquivo):
         with open(nome_arquivo, "r", encoding="utf-8") as f:
-            return f.read()[:50000] # Limita caracteres para controle de estabilidade de contexto básico
+            return f.read()[:50000]
     return "Nenhum documento anexado para este setor."
 
 USUARIOS = {
@@ -80,27 +78,36 @@ else:
     st.markdown(f"<h2>💼 Painel Operacional: {setor}</h2>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # Mapeamento de arquivos de dados reais por setor
     arquivos_conhecimento = {
         "Licitações e Contratos": "conhecimento_licitacoes.txt",
         "Atos Normativos": "conhecimento_atos.txt",
         "Comunicação Institucional": "conhecimento_comunicacao.txt"
     }
 
-    # Carrega a memória técnica real correspondente ao setor selecionado
     contexto_real = carregar_contexto_setor(arquivos_conhecimento[setor])
 
-    # PROMPT DE DIRETRIZ ESTRITA ANTI-ALUCINAÇÃO
+    # Inicializa a mensagem de apresentação automática baseada no setor se o histórico estiver vazio
+    if len(st.session_state.historico[setor]) == 0:
+        if setor == "Licitações e Contratos":
+            msg_inicial = f"Olá, {st.session_state.perfil_nome}! Sou o Assistente Especialista em Licitações e Contratos do CRO MG (2026). O que gostaria de fazer hoje?\n\n**[1] ESCREVER** -> Redigir minutas ou novos termos de referência.\n**[2] REVISAR** -> Auditar minutas ou editais sob a Lei 14.133/21.\n**[3] CONSULTAR** -> Realizar levantamentos nos contratos ativos."
+        elif setor == "Atos Normativos":
+            msg_inicial = f"Olá, {st.session_state.perfil_nome}! Sou o Consultor Legislativo em Atos Normativos do CRO MG (2026). O que gostaria de fazer hoje?\n\n**[1] ESCREVER** -> Redigir minutas de novas portarias ou resoluções.\n**[2] REVISAR** -> Auditar termos técnicos e redação oficial.\n**[3] CONSULTAR** -> Buscar precedentes e vigências de decisões."
+        else:
+            msg_inicial = f"Olá, {st.session_state.perfil_nome}! Sou o Diretor de Comunicação do CRO MG (2026). O que gostaria de fazer hoje?\n\n**[1] CALENDÁRIO DE PUBLICAÇÃO** -> Planejar posts e cronogramas.\n**[2] CRIAR CAMPANHA** -> Estruturar conceitos institucionais.\n**[3] DESENVOLVER COPY** -> Redigir textos no tom do conselho."
+        
+        st.session_state.historico[setor].append({"role": "assistant", "content": msg_inicial})
+
+    # PROMPT DE DIRETRIZ REFINADA COM PERMISSÃO DE SAUDAÇÕES
     prompts_setores = {
-        "Licitações e Contratos": f"Você é o Assistente Jurídico do CRO MG em 2026. Responda APENAS com base nos dados reais do conselho fornecidos no contexto abaixo. Se a informação não estiver lá ou se o usuário perguntar algo fora do escopo, diga firmemente: 'Não localizei essa informação nos arquivos oficiais indexados do conselho para 2026'. CONTEXTO REAL DA BASE:\n{contexto_real}",
-        "Atos Normativos": f"Você é o Consultor Legislativo especialista em Atos Normativos do CRO MG para 2026. Baseie-se unicamente nas portarias e resoluções do contexto fornecido abaixo. PROIBIDO ALUCINAR. Se não souber por falta de dados na base, diga textualmente que não localizou nos arquivos indexados. CONTEXTO REAL DA BASE:\n{contexto_real}",
-        "Comunicação Institucional": f"Você é o Diretor de Comunicação do CRO MG (2026). Aplique a linguagem, tom de voz e informações reais fornecidas na base abaixo para criar calendários, campanhas ou copys. Não invente fatos ou portarias que não constem no texto fornecido. CONTEXTO REAL DA BASE:\n{contexto_real}"
+        "Licitações e Contratos": f"Você é o Assistente Jurídico do CRO MG em 2026. Responda saudações cordiais de forma educada e pergunte como pode ajudar nas opções de Escrever, Revisar ou Consultar. Para perguntas de conteúdo técnico sobre o conselho, responda APENAS com base no contexto fornecido abaixo. Se a informação específica não estiver lá, diga firmemente: 'Não localizei essa informação nos arquivos oficiais indexados do conselho para 2026'. CONTEXTO:\n{contexto_real}",
+        "Atos Normativos": f"Você é o Consultor Legislativo do CRO MG para 2026. Responda a cumprimentos normalmente e oriente o fluxo. Para requisições sobre portarias e resoluções, use unicamente o contexto abaixo. Se não souber por falta de dados na base, diga que não localizou nos arquivos indexados. CONTEXTO:\n{contexto_real}",
+        "Comunicação Institucional": f"Você é o Diretor de Comunicação do CRO MG (2026). Responda a saudações de forma cordial. Utilize os dados e o tom institucional fornecidos na base abaixo para executar as tarefas de calendário, campanha ou cópia. Não invente fatos que não constem no texto fornecido. CONTEXTO:\n{contexto_real}"
     }
 
     for msg in st.session_state.historico[setor]:
         with st.chat_message(msg["role"]): st.write(msg["content"])
 
-    if prompt := st.chat_input("Faça sua consulta baseada nos dados reais do conselho..."):
+    if prompt := st.chat_input("Digite sua instrução ou escolha o número da atividade..."):
         st.session_state.historico[setor].append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.write(prompt)
             
@@ -116,7 +123,7 @@ else:
                 completions = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=mensagens_api,
-                    temperature=0.0 # Temperatura ZERO para bloquear qualquer desvio criativo do modelo
+                    temperature=0.2
                 )
                 resposta_ia = completions.choices[0].message.content
             except Exception as e:
