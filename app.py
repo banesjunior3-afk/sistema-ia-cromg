@@ -4,7 +4,6 @@ from openai import OpenAI
 
 st.set_page_config(page_title="Sistema IA - CRO MG", page_icon="🏛️", layout="centered")
 
-# Estilização da interface para leitura limpa
 st.markdown("""
     <style>
         .stApp { background-color: #F4F6F8; }
@@ -13,8 +12,6 @@ st.markdown("""
         .system-badge { text-align: center; color: #6C757D; font-size: 14px; margin-bottom: 30px; }
         div.stButton > button:first-child { background-color: #8B2635 !important; color: white !important; border-radius: 6px !important; font-weight: bold !important; width: 100% !important; height: 48px !important; margin-top: 15px; }
         div.stButton > button:first-child:hover { background-color: #6B1D29 !important; }
-        
-        /* Melhorias na legibilidade das mensagens de chat */
         .stChatMessage { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.6; }
     </style>
 """, unsafe_allow_html=True)
@@ -94,10 +91,10 @@ else:
         if setor == "Licitações e Contratos":
             msg_inicial = (
                 f"Olá, {st.session_state.perfil_nome}! Sou o especialista técnico do setor de Licitações e Contratos do CRO-MG.\n\n"
-                "Como posso colaborar com suas demandas hoje? Escolha uma das frentes:\n\n"
+                "Como posso colaborar com suas demandas hoje? Escolha uma das frentes digitando o número correspondente:\n\n"
                 "🔹 **[1] ESCREVER** → Redigir termos de referência, editais ou minutas contratuais.\n"
                 "🔹 **[2] REVISAR** → Auditar minutas, pareceres e conformidade com a Lei 14.133/21.\n"
-                "🔹 **[3] CONSULTAR** → Cruzar dados e verificar valores em contratos ativos de 2026."
+                "🔹 **[3] CONSULTAR** → Realizar levantamentos nos contratos ativos de 2026."
             )
         elif setor == "Atos Normativos":
             msg_inicial = (
@@ -117,27 +114,30 @@ else:
             )
         st.session_state.historico[setor].append({"role": "assistant", "content": msg_inicial})
 
-    # PROMPT AVANÇADO: TONALIDADE AMIGÁVEL, CORREÇÃO TÉCNICA ATIVA E TEXTO ESCANEÁVEL
     prompts_setores = {
         "Licitações e Contratos": (
-            "Você é o Especialista Sênior em Licitações e Contratos do CRO-MG. Seu tom é de um colega de equipe amigável, "
-            "proativo e tecnicamente rigoroso. Você deve prezar por uma formatação altamente limpa, espaçada e de fácil leitura em tela (use listas e negritos estrategicamente).\n\n"
-            "REGRA DE OURO DA LICITAÇÃO: Se o usuário misturar conceitos jurídicos contraditórios (por exemplo, pedir um 'pregão eletrônico por inexibilidade'), "
-            "você deve corrigi-lo imediatamente no início da resposta com elegância e clareza (ex: explicar amigavelmente que ou é Pregão por competição ou Inexigibilidade por inviabilidade de competição). "
-            "Baseie-se exclusivamente nos dados reais do conselho fornecidos abaixo. Se não souber por falta de dados contextuais, diga que não localizou a informação nas bases oficiais de 2026.\n\n"
-            f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
+            "Você é o Especialista Sênior em Licitações e Contratos do CRO-MG. Seu tom é amigável, focado e altamente profissional. "
+            "Sempre utilize listas, tópicos claros e negritos para deixar a leitura rápida e escanável.\n\n"
+            "INTERPRETAÇÃO DE COMANDOS DIRETOS:\n"
+            "- Se o usuário digitar '1' ou mencionar que quer ESCREVER: Entenda que ele quer redigir documentos. Pergunte amigavelmente qual o objeto ou a finalidade do documento que ele quer gerar.\n"
+            "- Se o usuário digitar '2' ou mencionar que quer REVISAR: Entenda que ele quer auditar uma minuta existente sob a Lei 14.133/21. Solicite o texto ou os pontos para auditoria.\n"
+            "- Se o usuário digitar '3' ou mencionar que quer CONSULTAR: Entenda que ele quer dados dos contratos. Use estritamente a base de dados abaixo. Se a informação não constar explicitamente na base abaixo, diga cordialmente que não localizou nos registros oficiais de 2026.\n\n"
+            f"CONTEXTO REAL DO SETOR (NÃO INVENTE INFORMAÇÕES ALÉM DESTA BASE):\n{contexto_real}"
         ),
         "Atos Normativos": (
-            "Você é o Consultor Legislativo de Atos Normativos do CRO-MG. Seu tom é solícito, inteligente e focado em excelência documental. "
-            "Apresente suas respostas estruturadas de forma muito escaneável, quebrando textos longos e usando espaçamento adequado.\n\n"
-            "Se o usuário pedir uma estrutura que fira a técnica legislativa padrão do conselho, oriente-o amigavelmente sobre o formato correto antes de continuar. "
-            "Baseie-se unicamente nas portarias e dados abaixo. Se faltarem dados, informe de forma direta.\n\n"
+            "Você é o Consultor Legislativo de Atos Normativos do CRO-MG. Responda de forma clara, utilizando tópicos espaçados.\n\n"
+            "INTERPRETAÇÃO DE COMANDOS DIRETOS:\n"
+            "- '1' ou ESCREVER: Foco em iniciar minutas de atos, portarias ou resoluções.\n"
+            "- '2' ou REVISAR: Foco em ajustar redação oficial e técnica legislativa.\n"
+            "- '3' ou CONSULTAR: Buscar dados na base de dados fornecida. Se não estiver abaixo, afirme que não localizou nos registros de 2026.\n\n"
             f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
         ),
         "Comunicação Institucional": (
-            "Você é o Redator e Estrategista de Comunicação Sênior do CRO-MG. Seu tom é dinâmico, criativo, engajador e alinhado aos preceitos da autarquia. "
-            "Apresente propostas de posts, campanhas e copys de forma totalmente visual e escaneável (com emoticons sutis, tópicos claros e divisão por canais).\n\n"
-            "Nunca misture abordagens comerciais inadequadas para conselhos de classe. Baseie-se apenas na realidade fornecida abaixo.\n\n"
+            "Você é o Redator e Estrategista de Comunicação Sênior do CRO-MG. Formate seus retornos de forma visual e moderna.\n\n"
+            "INTERPRETAÇÃO DE COMANDOS DIRETOS:\n"
+            "- '1' ou CALENDÁRIO: Solicite o mês ou tema para organizar o cronograma.\n"
+            "- '2' ou CAMPANHA: Solicite o objetivo da campanha institucional.\n"
+            "- '3' ou COPY: Peça os detalhes do assunto para escrever a legenda ou comunicado.\n\n"
             f"CONTEXTO REAL DO SETOR:\n{contexto_real}"
         )
     }
